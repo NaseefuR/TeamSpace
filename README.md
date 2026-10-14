@@ -21,6 +21,10 @@ For Supabase, set `DATABASE_URL` in `backend/.env` to the PostgreSQL connection 
 
 Docs: `http://localhost:8000/docs`; health/readiness: `/api/v1/health`, `/api/v1/ready`.
 
+## Keep a Render free backend awake
+
+The `Keep Render backend awake` GitHub Actions workflow pings the backend health endpoint every 10 minutes. After deploying the backend to Render, add a repository Actions variable named `RENDER_BACKEND_URL` with the service origin only, for example `https://teamspace-api.onrender.com` (no path or trailing slash). The workflow can also be started manually from the repository's **Actions** tab. GitHub scheduled jobs are best-effort and can be delayed; use a paid Render instance if reliable always-on availability is required. Preventing idle spin-down keeps a free instance running and consumes its monthly instance-hour allowance.
+
 ## Browser push notifications
 
 Web push is opt-in per browser. Configure a matching VAPID key pair in the backend environment:

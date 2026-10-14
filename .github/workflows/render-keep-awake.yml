@@ -1,0 +1,22 @@
+name: Keep Render backend awake
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Ping backend health endpoint
+        env:
+          RENDER_BACKEND_URL: ${{ vars.RENDER_BACKEND_URL }}
+        run: |
+          if [ -z "$RENDER_BACKEND_URL" ]; then
+            echo "Set the RENDER_BACKEND_URL repository variable to your Render backend URL."
+            exit 1
+          fi
+          curl --fail --silent --show-error --max-time 30 \
+            "${RENDER_BACKEND_URL%/}/api/v1/health"

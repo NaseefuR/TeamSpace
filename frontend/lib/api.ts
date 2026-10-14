@@ -1,7 +1,11 @@
 import type { AIAnswer, AppNotification, Channel, ChannelMember, ChannelMessage, Project, Task, TaskStatusTransition, TaskUpdate, TokenPair, User, WebPushConfig, WebPushSubscriptionInput, WikiPage, WikiPageSummary, WikiVersion, Workspace, WorkspaceMember } from "@/lib/types";
 import { useAuth } from "@/store/auth";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+const configuredApiUrl = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1")
+  .replace(/\/+$/, "");
+const API = configuredApiUrl.endsWith("/api/v1")
+  ? configuredApiUrl
+  : `${configuredApiUrl}/api/v1`;
 
 const refreshRequests = new Map<string, Promise<TokenPair | null>>();
 

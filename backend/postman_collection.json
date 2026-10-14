@@ -1,0 +1,462 @@
+{
+  "info": {
+    "name": "Teamwork API v1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000/api/v1"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "workspaceId",
+      "value": ""
+    },
+    {
+      "key": "projectId",
+      "value": ""
+    },
+    {
+      "key": "taskId",
+      "value": ""
+    },
+    {
+      "key": "channelId",
+      "value": ""
+    },
+    {
+      "key": "messageId",
+      "value": ""
+    },
+    {
+      "key": "docId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"lead@example.com\",\"password\":\"ChangeThis!123\",\"name\":\"Alex Lead\"}"
+            },
+            "url": "{{baseUrl}}/auth/register"
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"lead@example.com\",\"password\":\"ChangeThis!123\"}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Workspace",
+      "item": [
+        {
+          "name": "Create workspace",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Engineering\",\"slug\":\"engineering\",\"description\":\"Demo workspace\"}"
+            },
+            "url": "{{baseUrl}}/workspaces"
+          }
+        },
+        {
+          "name": "Update current workspace",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Platform Engineering\",\"slug\":\"platform-eng\",\"description\":\"Product engineering team\"}"
+            },
+            "url": "{{baseUrl}}/workspaces/{{workspaceId}}"
+          }
+        },
+        {
+          "name": "Add existing member to workspace",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"developer@example.com\",\"role\":\"member\"}"
+            },
+            "url": "{{baseUrl}}/workspaces/{{workspaceId}}/members"
+          }
+        },
+        {
+          "name": "Create account and add to workspace",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Jamie Developer\",\"email\":\"developer@example.com\",\"password\":\"FirstLoginPassword!42\",\"role\":\"member\"}"
+            },
+            "url": "{{baseUrl}}/workspaces/{{workspaceId}}/members/accounts"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Projects and tasks",
+      "item": [
+        {
+          "name": "List projects",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/workspaces/{{workspaceId}}/projects?page=1&page_size=20"
+          }
+        },
+        {
+          "name": "List tasks",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/projects/{{projectId}}/tasks?page=1&page_size=20"
+          }
+        },
+        {
+          "name": "Update task details and severity",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"title\":\"Add health checks\",\"priority\":\"high\",\"severity\":\"critical\",\"status\":\"In Progress\"}"
+            },
+            "url": "{{baseUrl}}/tasks/{{taskId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Channels",
+      "item": [
+        {
+          "name": "Create channel",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/workspaces/{{workspaceId}}/channels",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"design-review\", \"description\": \"Product design discussion\", \"is_private\": false}"
+            }
+          }
+        },
+        {
+          "name": "List workspace channels",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/workspaces/{{workspaceId}}/channels"
+          }
+        },
+        {
+          "name": "Post a channel message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/channels/{{channelId}}/messages",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"body\": \"The new onboarding flow is ready for review.\"}"
+            }
+          }
+        },
+        {
+          "name": "List channel messages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/channels/{{channelId}}/messages?page=1&page_size=50"
+          }
+        },
+        {
+          "name": "Reply in a thread",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/channels/{{channelId}}/messages",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"body\": \"I added a few notes.\", \"parent_message_id\": \"{{messageId}}\"}"
+            }
+          }
+        },
+        {
+          "name": "List private channel members",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/channels/{{channelId}}/members"
+          }
+        },
+        {
+          "name": "Add private channel member",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/channels/{{channelId}}/members",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"user_id\": \"member-uuid\"}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Team docs",
+      "item": [
+        {
+          "name": "List workspace documents",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/workspaces/{{workspaceId}}/docs?page=1&page_size=100"
+          }
+        },
+        {
+          "name": "Create a document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/workspaces/{{workspaceId}}/docs",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"title\": \"Engineering handbook\", \"content\": \"# Engineering handbook\\n\\nTeam practices and setup notes.\"}"
+            }
+          }
+        },
+        {
+          "name": "Read a document",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/docs/{{docId}}"
+          }
+        },
+        {
+          "name": "Save a document version",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/docs/{{docId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"content\": \"# Engineering handbook\\n\\nUpdated setup notes.\", \"change_summary\": \"Clarified setup steps\"}"
+            }
+          }
+        },
+        {
+          "name": "List document versions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/docs/{{docId}}/versions"
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI assistant",
+      "item": [
+        {
+          "name": "Ask about workspace work",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"workspace_id\":\"{{workspaceId}}\",\"project_id\":\"{{projectId}}\",\"question\":\"What tasks are in progress?\"}"
+            },
+            "url": "{{baseUrl}}/ai/chat"
+          }
+        }
+      ]
+    }
+  ]
+}

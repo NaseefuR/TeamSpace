@@ -1,0 +1,19 @@
+[Unit]
+Description=Teamwork API
+After=network-online.target
+
+[Service]
+User=teamwork
+Group=teamwork
+WorkingDirectory=/opt/teamwork/backend
+EnvironmentFile=/etc/teamwork/teamwork.env
+ExecStart=/opt/teamwork/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 --workers 4
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/teamwork
+
+[Install]
+WantedBy=multi-user.target

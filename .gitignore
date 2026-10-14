@@ -12,6 +12,7 @@ __pycache__/
 *.sqlite3
 .pytest_cache/
 .ruff_cache/
+*.tsbuildinfo
 backend/*.egg-info/
 uploads/
 backend/uploads/

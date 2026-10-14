@@ -2,7 +2,13 @@ from sqlalchemy.engine import URL, make_url
 
 
 def _is_supabase(url: URL) -> bool:
-    return bool(url.host and url.host.endswith(".supabase.co"))
+    return bool(
+        url.host
+        and (
+            url.host.endswith(".supabase.co")
+            or url.host.endswith(".pooler.supabase.com")
+        )
+    )
 
 
 def async_database_url(database_url: str) -> str:

@@ -17,7 +17,7 @@ alembic upgrade head
 uvicorn app.main:app --reload
 ```
 
-For Supabase, set `DATABASE_URL` in `backend/.env` to the PostgreSQL connection URI from your Supabase project. URL-encode special characters in the password; Supabase TLS is enabled automatically for `*.supabase.co` hosts.
+For Supabase on Render, set `DATABASE_URL` to the **Session pooler** URI copied from the project's **Connect** panel. The direct `db.<project-ref>.supabase.co` endpoint is IPv6-only unless the Supabase project has the IPv4 add-on; the shared session pooler is IPv4-compatible. Use the exact pooler host, port, and username shown in the dashboard, URL-encode special characters in the password, and keep TLS enabled (the app enables it automatically for Supabase direct and pooler hosts).
 
 Docs: `http://localhost:8000/docs`; health/readiness: `/api/v1/health`, `/api/v1/ready`.
 

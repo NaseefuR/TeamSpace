@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BookOpen, Check, ChevronRight, Clock3, FilePlus2, History, List, Plus, Quote, Save, Search, Sparkles, Trash2, Type, X } from "lucide-react";
+import { BookOpen, Check, ChevronRight, Clock3, Download, FilePlus2, FileText, History, List, Plus, Quote, Save, Search, Sparkles, Trash2, Type, Upload, X } from "lucide-react";
 import { Markdown } from "@/components/markdown";
 import { api } from "@/lib/api";
 import type { WikiVersion } from "@/lib/types";
@@ -11,6 +11,7 @@ import { useWorkspace } from "@/store/workspace";
 import "./docs.css";
 
 const shortDate = (value: string) => new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(value));
+const fileSize = (bytes: number) => bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 
 export default function DocsPage() {
   const selectedWorkspaceId = useWorkspace(state => state.selectedId);
@@ -30,8 +31,10 @@ export default function DocsPage() {
   const [newParentId, setNewParentId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [docToArchive, setDocToArchive] = useState<{ id: string; title: string } | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
 
   const docs = useQuery({ queryKey: ["docs", workspaceId], queryFn: () => api.docs(workspaceId!), enabled: !!workspaceId });
+  const files = useQuery({ queryKey: ["workspace-files", workspaceId], queryFn: () => api.workspaceFiles(workspaceId!), enabled: !!workspaceId });
   const members = useQuery({ queryKey: ["members", workspaceId], queryFn: () => api.members(workspaceId!), enabled: !!workspaceId });
   useEffect(() => {
     if (!docs.data?.length) { setPageId(null); return; }
@@ -45,6 +48,19 @@ export default function DocsPage() {
   const visibleDocs = useMemo(() => (docs.data ?? []).filter(page => page.title.toLowerCase().includes(search.toLowerCase())), [docs.data, search]);
   const workspaceRole = members.data?.find(member => member.user_id === user?.id)?.role;
   const mayEdit = ["owner", "admin", "member"].includes(workspaceRole ?? "");
+  const uploadFile = useMutation({
+    mutationFn: (file: File) => api.uploadWorkspaceFile(workspaceId!, file),
+    onSuccess: async () => { setFileError(null); await client.invalidateQueries({ queryKey: ["workspace-files", workspaceId] }); },
+    onError: error => setFileError(error.message),
+  });
+  const removeFile = useMutation({
+    mutationFn: (id: string) => api.deleteWorkspaceFile(id),
+    onSuccess: async () => { await client.invalidateQueries({ queryKey: ["workspace-files", workspaceId] }); },
+  });
+  const downloadFile = useMutation({
+    mutationFn: async ({ id, filename }: { id: string; filename: string }) => ({ blob: await api.downloadWorkspaceFile(id), filename }),
+    onSuccess: ({ blob, filename }) => { const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = filename; link.click(); window.setTimeout(() => URL.revokeObjectURL(url), 1000); },
+  });
   const canArchiveDoc = (page: NonNullable<typeof docs.data>[number]) =>
     page.created_by === user?.id || ["owner", "admin"].includes(workspaceRole ?? "");
   useEffect(() => { if (workspaceRole === "guest") setMode("preview"); }, [workspaceRole]);
@@ -107,6 +123,22 @@ export default function DocsPage() {
           {archiveDoc.error && <p role="alert" className="docs-list-empty docs-error">{archiveDoc.error.message}</p>}
           {!docs.isLoading && !docs.error && visibleDocs.length === 0 && <div className="docs-list-empty"><FilePlus2 size={17}/><span>{search ? "No pages match your search." : "Your team library is ready for its first page."}</span></div>}
         </div>
+        <div className="docs-files-heading"><span>FILES</span><span>{files.data?.length ?? 0}</span></div>
+        <div className="docs-files-list">
+          {files.isLoading && <p className="docs-files-empty">Loading files…</p>}
+          {files.error && <p role="alert" className="docs-files-empty docs-error">{files.error.message}</p>}
+          {files.data?.map(file => <div key={file.id} className="docs-file-row">
+            <FileText size={13}/><span className="docs-file-info"><strong title={file.filename}>{file.filename}</strong><small>{fileSize(file.size_bytes)}</small></span>
+            <button type="button" title={`Download ${file.filename}`} aria-label={`Download ${file.filename}`} onClick={() => downloadFile.mutate({ id: file.id, filename: file.filename })} disabled={downloadFile.isPending}><Download size={12}/></button>
+            {(file.uploaded_by === user?.id || ["owner", "admin"].includes(workspaceRole ?? "")) && <button type="button" title={`Remove ${file.filename}`} aria-label={`Remove ${file.filename}`} onClick={() => removeFile.mutate(file.id)} disabled={removeFile.isPending}><Trash2 size={12}/></button>}
+          </div>)}
+          {!files.isLoading && !files.error && !files.data?.length && <p className="docs-files-empty">Shared documents will appear here.</p>}
+          {(fileError || removeFile.error || downloadFile.error) && <p role="alert" className="docs-files-empty docs-error">{fileError || removeFile.error?.message || downloadFile.error?.message}</p>}
+        </div>
+        <label className={`docs-upload-button ${!mayEdit || uploadFile.isPending ? "docs-upload-disabled" : ""}`}>
+          <Upload size={13}/>{uploadFile.isPending ? "Uploading…" : "Upload a file"}
+          <input type="file" accept=".pdf,.doc,.docx,.odt,.rtf,.txt,.md,.csv,.xls,.xlsx,.ods,.ppt,.pptx,.odp" disabled={!mayEdit || uploadFile.isPending} onChange={event => { const file = event.currentTarget.files?.[0]; if (file) uploadFile.mutate(file); event.currentTarget.value = ""; }}/>
+        </label>
         <button onClick={() => openCreate(pageId)} disabled={!pageId} className="docs-add-subpage"><Plus size={13}/> New subpage</button>
         <div className="docs-sidebar-foot"><Sparkles size={13}/><span>Good notes make good handoffs.</span></div>
       </aside>

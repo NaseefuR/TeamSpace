@@ -1,4 +1,4 @@
-import type { AIAnswer, AppNotification, Channel, ChannelMember, ChannelMessage, Project, Task, TaskStatusTransition, TaskUpdate, TokenPair, User, WebPushConfig, WebPushSubscriptionInput, WikiPage, WikiPageSummary, WikiVersion, Workspace, WorkspaceMember } from "@/lib/types";
+import type { AIAnswer, AppNotification, Channel, ChannelMember, ChannelMessage, Project, Task, TaskStatusTransition, TaskUpdate, TokenPair, User, WebPushConfig, WebPushSubscriptionInput, WikiPage, WikiPageSummary, WikiVersion, Workspace, WorkspaceFile, WorkspaceMember } from "@/lib/types";
 import { useAuth } from "@/store/auth";
 
 const configuredApiUrl = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1")
@@ -94,7 +94,8 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   }
   const headers = (token?: string) => {
     const requestHeaders = new Headers(init.headers);
-    if (!requestHeaders.has("Content-Type")) requestHeaders.set("Content-Type", "application/json");
+    const isForm = typeof FormData !== "undefined" && init.body instanceof FormData;
+    if (!requestHeaders.has("Content-Type") && !isForm) requestHeaders.set("Content-Type", "application/json");
     if (token) requestHeaders.set("Authorization", `Bearer ${token}`);
     return requestHeaders;
   };
@@ -146,11 +147,13 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
       throw new Error("Your session expired. Please sign in again.");
     }
   }
-  const body = await response.json();
   if (!response.ok) {
+    const body = await response.json();
     const error = body?.error;
     throw new Error(error?.message ?? `Request failed (${response.status})`);
   }
+  if (!response.headers.get("content-type")?.includes("application/json")) return await response.blob() as T;
+  const body = await response.json();
   return body.data as T;
 }
 
@@ -184,6 +187,10 @@ export const api = {
   channelMembers: (channelId: string) => request<ChannelMember[]>(`/channels/${channelId}/members`),
   removeChannelMember: (channelId: string, userId: string) => request<{ channel_id: string; user_id: string; removed: boolean }>(`/channels/${channelId}/members/${userId}`, { method: "DELETE" }),
   docs: (workspaceId: string) => request<WikiPageSummary[]>(`/workspaces/${workspaceId}/docs?page=1&page_size=100`),
+  workspaceFiles: (workspaceId: string) => request<WorkspaceFile[]>(`/workspaces/${workspaceId}/files`),
+  uploadWorkspaceFile: (workspaceId: string, file: File) => { const form = new FormData(); form.append("file", file); return request<WorkspaceFile>(`/workspaces/${workspaceId}/files`, { method: "POST", body: form }); },
+  downloadWorkspaceFile: (fileId: string) => request<Blob>(`/workspace-files/${fileId}/download`),
+  deleteWorkspaceFile: (fileId: string) => request<{ id: string; deleted: boolean }>(`/workspace-files/${fileId}`, { method: "DELETE" }),
   doc: (pageId: string) => request<WikiPage>(`/docs/${pageId}`),
   createDoc: (workspaceId: string, body: { title: string; content: string; parent_page_id?: string | null }) => request<WikiPage>(`/workspaces/${workspaceId}/docs`, { method: "POST", body: JSON.stringify(body) }),
   updateDoc: (pageId: string, body: { title: string; content: string; change_summary?: string }) => request<WikiPage>(`/docs/${pageId}`, { method: "PATCH", body: JSON.stringify(body) }),

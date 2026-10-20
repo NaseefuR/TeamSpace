@@ -1,7 +1,11 @@
+import mimetypes
 import re
+import uuid
 from datetime import UTC, datetime
+from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi.responses import FileResponse
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,8 +19,10 @@ from app.models.entities import (
     User,
     WikiPage,
     WikiVersion,
+    WorkspaceFile,
     WorkspaceMember,
 )
+from app.core.config import settings
 from app.schemas.common import (
     ChannelCreate,
     ChannelMemberAdd,
@@ -32,11 +38,20 @@ from app.schemas.common import (
     WikiPagePatch,
     WikiPageSummary,
     WikiVersionOut,
+    WorkspaceFileOut,
 )
 
 router = APIRouter()
 WORKSPACE_ROLES = {"owner", "admin", "member", "guest"}
 EDITOR_ROLES = {"owner", "admin", "member"}
+ALLOWED_DOCUMENT_EXTENSIONS = {
+    ".pdf", ".doc", ".docx", ".odt", ".rtf", ".txt", ".md", ".csv",
+    ".xls", ".xlsx", ".ods", ".ppt", ".pptx", ".odp",
+}
+
+
+def _workspace_file_path(storage_key: str) -> Path:
+    return Path(settings.file_storage_path).resolve() / "workspace" / storage_key
 
 
 def _slug(value: str) -> str:
@@ -489,6 +504,122 @@ async def list_docs(
         "data": result.scalars().all(),
         "meta": {"page": page, "page_size": page_size, "total": total or 0},
     }
+
+
+@router.get(
+    "/workspaces/{workspace_id}/files",
+    response_model=Envelope[list[WorkspaceFileOut]],
+    tags=["docs"],
+    summary="List workspace files",
+)
+async def list_workspace_files(
+    workspace_id: str,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    await require_workspace_role(workspace_id, WORKSPACE_ROLES, user, db)
+    result = await db.execute(
+        select(WorkspaceFile)
+        .where(WorkspaceFile.workspace_id == workspace_id, WorkspaceFile.deleted_at.is_(None))
+        .order_by(WorkspaceFile.created_at.desc())
+    )
+    return {"data": result.scalars().all()}
+
+
+@router.post(
+    "/workspaces/{workspace_id}/files",
+    response_model=Envelope[WorkspaceFileOut],
+    status_code=201,
+    tags=["docs"],
+    summary="Upload a file to a workspace",
+)
+async def upload_workspace_file(
+    workspace_id: str,
+    file: UploadFile = File(...),
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    await require_workspace_role(workspace_id, EDITOR_ROLES, user, db)
+    filename = (file.filename or "").replace("\\", "/").rsplit("/", 1)[-1].strip()
+    extension = Path(filename).suffix.lower()
+    if not filename or len(filename) > 255:
+        raise HTTPException(422, "File name must be between 1 and 255 characters")
+    if extension not in ALLOWED_DOCUMENT_EXTENSIONS:
+        raise HTTPException(415, "This file type is not supported")
+
+    storage_key = f"{uuid.uuid4()}{extension}"
+    destination = _workspace_file_path(storage_key)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    size_bytes = 0
+    try:
+        with destination.open("wb") as stored:
+            while chunk := await file.read(1024 * 1024):
+                size_bytes += len(chunk)
+                if size_bytes > settings.max_upload_bytes:
+                    raise HTTPException(413, "File exceeds the upload size limit")
+                stored.write(chunk)
+        if size_bytes == 0:
+            raise HTTPException(422, "The uploaded file is empty")
+        content_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
+        record = WorkspaceFile(
+            workspace_id=workspace_id,
+            filename=filename,
+            storage_key=storage_key,
+            content_type=content_type,
+            size_bytes=size_bytes,
+            uploaded_by=user.id,
+        )
+        db.add(record)
+        await db.commit()
+        await db.refresh(record)
+        return {"data": record}
+    except Exception:
+        destination.unlink(missing_ok=True)
+        raise
+    finally:
+        await file.close()
+
+
+@router.get(
+    "/workspace-files/{file_id}/download",
+    tags=["docs"],
+    summary="Download a workspace file",
+)
+async def download_workspace_file(
+    file_id: str,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    record = await db.get(WorkspaceFile, file_id)
+    if not record or record.deleted_at:
+        raise HTTPException(404, "File not found")
+    await require_workspace_role(record.workspace_id, WORKSPACE_ROLES, user, db)
+    path = _workspace_file_path(record.storage_key)
+    if not path.is_file():
+        raise HTTPException(404, "File content is unavailable")
+    return FileResponse(path, media_type=record.content_type, filename=record.filename)
+
+
+@router.delete(
+    "/workspace-files/{file_id}",
+    response_model=Envelope[dict],
+    tags=["docs"],
+    summary="Remove a workspace file",
+)
+async def delete_workspace_file(
+    file_id: str,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    record = await db.get(WorkspaceFile, file_id)
+    if not record or record.deleted_at:
+        raise HTTPException(404, "File not found")
+    role = await require_workspace_role(record.workspace_id, WORKSPACE_ROLES, user, db)
+    if record.uploaded_by != user.id and role not in {"owner", "admin"}:
+        raise HTTPException(403, "Only the uploader or a workspace admin can remove this file")
+    record.deleted_at = datetime.now(UTC)
+    await db.commit()
+    return {"data": {"id": record.id, "deleted": True}}
 
 
 @router.post(

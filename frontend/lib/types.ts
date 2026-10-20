@@ -17,3 +17,4 @@ export type ChannelMessage = { id: string; channel_id: string; user_id: string; 
 export type WikiPage = { id: string; workspace_id: string; parent_page_id?: string | null; title: string; slug: string; content: string; icon?: string | null; created_by: string; updated_by?: string | null; created_at: string; updated_at: string };
 export type WikiPageSummary = Omit<WikiPage, "content">;
 export type WikiVersion = { id: string; page_id: string; version_number: number; title: string; content: string; change_summary?: string | null; created_by: string; created_at: string };
+export type WorkspaceFile = { id: string; workspace_id: string; filename: string; content_type: string; size_bytes: number; uploaded_by: string; created_at: string };

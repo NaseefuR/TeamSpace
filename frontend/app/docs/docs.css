@@ -62,6 +62,22 @@
 .docs-tree-item:hover { background:rgba(255,255,255,.04); color:#f0edfa; }
 .docs-tree-active { border-color:rgba(168,147,255,.16); background:linear-gradient(100deg,rgba(124,99,241,.2),rgba(124,99,241,.07)); color:#d2c7ff; }
 .docs-tree-child .docs-tree-item { padding-left:20px; }
+.docs-files-heading { display:flex; align-items:center; justify-content:space-between; margin:15px 8px 6px; color:#9793a8; font-size:7px; font-weight:800; letter-spacing:.15em; }
+.docs-files-heading span:last-child { color:rgba(225,221,240,.4); font-weight:500; letter-spacing:0; }
+.docs-files-list { max-height:205px; overflow-y:auto; }
+.docs-file-row { display:flex; min-width:0; align-items:center; gap:7px; border-radius:8px; padding:7px 5px; color:rgba(193,179,255,.78); }
+.docs-file-row:hover { background:rgba(255,255,255,.035); }
+.docs-file-info { display:flex; min-width:0; flex:1; flex-direction:column; gap:2px; }
+.docs-file-info strong { overflow:hidden; color:rgba(231,227,245,.68); font-size:8px; font-weight:550; text-overflow:ellipsis; white-space:nowrap; }
+.docs-file-info small { color:rgba(226,222,241,.34); font-size:7px; }
+.docs-file-row button { display:grid; width:22px; height:22px; flex:none; place-items:center; border-radius:6px; color:rgba(226,222,241,.4); }
+.docs-file-row button:hover:not(:disabled) { background:rgba(255,255,255,.07); color:#d1c4ff; }
+.docs-file-row button:disabled { opacity:.4; }
+.docs-files-empty { padding:6px 8px; color:rgba(226,222,241,.38); font-size:8px; line-height:1.5; }
+.docs-upload-button { display:flex; width:100%; min-height:32px; align-items:center; justify-content:center; gap:7px; margin:7px 0 9px; border:1px dashed rgba(226,222,255,.15); border-radius:9px; color:rgba(223,219,239,.6); font-size:9px; cursor:pointer; transition:.18s; }
+.docs-upload-button:hover:not(.docs-upload-disabled) { border-color:rgba(169,147,255,.32); color:#c8bbff; }
+.docs-upload-button input { display:none; }
+.docs-upload-disabled { cursor:not-allowed; opacity:.4; }
 .docs-page-icon { display:grid; width:20px; height:20px; flex:none; place-items:center; border-radius:6px; background:rgba(255,255,255,.05); color:#c1b3ff; font-size:12px; }
 .docs-list-empty { display:flex; align-items:center; gap:8px; padding:15px 9px; color:rgba(226,222,241,.42); font-size:9px; line-height:1.6; }
 .docs-add-subpage { display:flex; width:100%; align-items:center; gap:7px; border:1px dashed rgba(226,222,255,.12); border-radius:9px; padding:8px; color:rgba(223,219,239,.46); font-size:9px; text-align:left; transition:.18s; }

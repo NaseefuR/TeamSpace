@@ -200,6 +200,21 @@ class WikiVersion(TimestampMixin, Base):
     created_by: Mapped[str] = mapped_column(ForeignKey("users.id"))
 
 
+class WorkspaceFile(TimestampMixin, Base):
+    __tablename__ = "workspace_files"
+    __table_args__ = (Index("ix_workspace_files_workspace_created", "workspace_id", "created_at"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    workspace_id: Mapped[str] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), index=True
+    )
+    filename: Mapped[str] = mapped_column(String(255))
+    storage_key: Mapped[str] = mapped_column(String(100), unique=True)
+    content_type: Mapped[str] = mapped_column(String(160))
+    size_bytes: Mapped[int] = mapped_column(Integer)
+    uploaded_by: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 class Project(TimestampMixin, Base):
     __tablename__ = "projects"
     __table_args__ = (UniqueConstraint("workspace_id", "key"),)

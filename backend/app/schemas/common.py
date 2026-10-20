@@ -225,3 +225,14 @@ class WikiVersionOut(BaseModel):
     change_summary: str | None = None
     created_by: str
     created_at: datetime
+
+
+class WorkspaceFileOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    workspace_id: str
+    filename: str
+    content_type: str
+    size_bytes: int
+    uploaded_by: str
+    created_at: datetime

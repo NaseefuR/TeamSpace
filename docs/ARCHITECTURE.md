@@ -3,7 +3,7 @@
 ## Runtime modules
 
 - `backend/app/api`: FastAPI routes and reusable authorization dependencies.
-- `backend/app/api/collaboration.py`: workspace channels, one-level message threads, private-channel membership, Markdown docs, and page versions.
+- `backend/app/api/collaboration.py`: workspace channels, one-level message threads, private-channel membership, Markdown docs, page versions, and authenticated workspace file uploads/downloads.
 - `backend/app/services`: password/JWT, archive validation, notification creation, and Brevo email delivery.
 - `POST /api/v1/ai/chat`: checks workspace membership, supplies bounded project/task context to the configured OpenAI-compatible chat endpoint, and returns referenced workspace records.
 - `backend/app/models`: SQLAlchemy entities; `backend/app/schemas`: Pydantic contracts.
